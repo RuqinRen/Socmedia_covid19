@@ -5,11 +5,12 @@ library(hablar)
 install.packages('stringr')
 library(stringr)
 getwd()
-wave1 <- read.csv("wave1.csv")
-wave2 <- read.csv("wave2.csv")
+wave1 <- read.csv("/home/rstudio/mentalhealth/wave1.csv")
+wave2 <- read.csv("/home/rstudio/mentalhealth/wave2.csv")
 names(wave2)
 dim(wave2)
 names(wave1)
+
 
 #combine respondents who participated in both waves
 data150 <- wave2 %>% inner_join(wave1, by=c("RecipientEmail" = "Q60.1"))
@@ -165,16 +166,28 @@ twowave <- twowave[-c(33,34)]
 
 #remove those who chose "other" in areas of origin
 twowave <- twowave[-which(twowave$wave2_area_origin == "Other"),]
+#149 rows left
+
+
+mutate_at(vars(contains("english")), 
+          funs("english_rc" = recode(., "   
+         'Slightly well' = 2;
+         'Moderately well' = 3;
+         'Very well' = 4;
+          'Extremely well'  = 5"
+          ))) 
+
 
 #convert survey scales to ordered numbers
 a <- twowave %>% 
    mutate_at(vars(ends_with("importance_socmedia")), 
              funs("rc" = recode(.,
-                                "None at all" = 1,
-                                "A little important"  = 2,
-                                "Moderately importantly"  = 3,
-                                "Very important"= 4,
-                                "Extremely important" = 5))) %>%
+                                "
+                                'None at all' = 1;
+                                'A little important'  = 2;
+                                'Moderately importantly'  = 3;
+                                'Very important'= 4;
+                                'Extremely important' = 5 "))) %>% #need to change every module below as this format
    mutate_at(vars(contains("_covid_")), 
              funs("rc" = recode(.,
                                 "Not at all severe" = 1,
@@ -215,16 +228,16 @@ a <- twowave %>%
 a <- a%>%
    mutate_at(vars(contains("_anx_")), 
              funs("rc" = recode(.,
-                                "Not at all" = 1,
-                                "Several days"  = 2,
-                                "More than half the days"  = 3,
-                                "Nearly every day"= 4))) %>%
+                                "Not at all" = 0,
+                                "Several days"  = 1,
+                                "More than half the days"  = 2,
+                                "Nearly every day"= 3))) %>%
    mutate_at(vars(contains("_dep_")), 
              funs("rc" = recode(.,
-                                "Not at all" = 1,
-                                "Several days"  = 2,
-                                "More than half the days"  = 3,
-                                "Nearly every day"= 4)))  %>% 
+                                "Not at all" = 0,
+                                "Several days"  = 1,
+                                "More than half the days"  = 2,
+                                "Nearly every day"= 3)))  %>% 
    mutate_at(vars(contains("year_US")), 
                    funs("year_US_rc" = recode(.,
                                       "Less than 1 year" = 1,
@@ -300,20 +313,20 @@ twowave <- twowave[-c(19:33, 104:118)]
    transmute(wave2_gss_avg = rowMeans(., na.rm = TRUE))%>% 
    as.data.frame()
  wave2_dep_avg <- twowave %>% select(starts_with('wave2_dep')) %>%
-   transmute(wave2_dep_avg = rowMeans(., na.rm = TRUE))%>% 
+   transmute(wave2_dep_avg = rowSum(., na.rm = TRUE))%>% 
    as.data.frame()
  wave2_anx_avg <- twowave %>% select(starts_with('wave2_anx')) %>%
-   transmute(wave2_anx_avg = rowMeans(., na.rm = TRUE))%>% 
+   transmute(wave2_anx_avg = rowSum(., na.rm = TRUE))%>% 
    as.data.frame()
  
  wave1_gss_avg <- twowave %>% select(starts_with('wave1_gss')) %>%
    transmute(wave1_gss_avg = rowMeans(., na.rm = TRUE))%>% 
    as.data.frame()
  wave1_dep_avg <- twowave %>% select(starts_with('wave1_dep')) %>%
-   transmute(wave1_dep_avg = rowMeans(., na.rm = TRUE))%>% 
+   transmute(wave1_dep_avg = rowSum(., na.rm = TRUE))%>% 
    as.data.frame()
  wave1_anx_avg <- twowave %>% select(starts_with('wave1_anx')) %>%
-   transmute(wave1_anx_avg = rowMeans(., na.rm = TRUE))%>% 
+   transmute(wave1_anx_avg = rowSum(., na.rm = TRUE))%>% 
    as.data.frame()
  
 twowave <- cbind(twowave, wave2_gss_avg,wave2_dep_avg,wave2_anx_avg, wave1_gss_avg, wave1_dep_avg, wave1_anx_avg )
@@ -436,5 +449,48 @@ twowave$avg_like <- b$avg_like
 
 write.csv(twowave, "twowave0922.csv")
 twowave <- read.csv("twowave0922.csv")
+
+
+#compare wave2 participants with benchmark to check for selection bias
+benchmark <- read.csv("benchmark_wave1.csv")
+benchmark <- benchmark[-1,c(1:5)]
+names(benchmark)
+colnames(benchmark) <- c("year","sex","degree","yaer_US","english")
+
+
+myrecode <- function(x){
+   recode(x,   "   
+          'Less than 1 year' = 1;
+         '1-2 years' = 2;
+         '2-3 years' = 3;
+         '3-4 years' = 4;
+         'More than 4 years'  = 5" )
+   }
+
+sapply(benchmark$yaer_US, myrecode)
+benchmark <- 
+   benchmark %>%
+   mutate_at(vars(contains("english")), 
+             funs("english_rc" = recode(., "   
+         'Slightly well' = 2;
+         'Moderately well' = 3;
+         'Very well' = 4;
+          'Extremely well'  = 5"
+             ))) %>%
+      mutate_at(vars(contains("US")), 
+                funs("year_US_rc" = recode(., "  
+         'Less than 1 year' = 1;
+         '1-2 years' = 2;
+         '2-3 years' = 3;
+         '3-4 years' = 4;
+         'More than 4 years'  = 5"
+          ))) %>%
+  mutate( year_rc = 2020 - as.numeric(as.character(year)))
+
+benchmark$year_US_rc <- as.numeric(benchmark$year_US_rc)
+benchmark$english_rc <- as.numeric(benchmark$english_rc)
+
+summary(benchmark[,c("year_rc","year_US_rc", "english_rc", "sex", "degree")])
+summary(twowave[,c("year","year_US_rc", "english_rc", "sex", "degree")])
 
 
