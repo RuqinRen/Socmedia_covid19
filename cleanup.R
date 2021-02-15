@@ -169,17 +169,26 @@ twowave <- twowave[-which(twowave$wave2_area_origin == "Other"),]
 #149 rows left
 
 
-mutate_at(vars(contains("english")), 
-          funs("english_rc" = recode(., "   
+#convert survey scales to ordered numbers
+
+a <- twowave %>% 
+   mutate_at(vars(contains("english")), 
+             funs("english_rc" = recode(., " 
+             'Not well at all' = 1;
          'Slightly well' = 2;
          'Moderately well' = 3;
          'Very well' = 4;
           'Extremely well'  = 5"
-          ))) 
-
-
-#convert survey scales to ordered numbers
-a <- twowave %>% 
+             ))) %>%
+   mutate_at(vars(contains("freq_home")), 
+             funs("freq_home_rc" = recode(.,
+                                        "
+                                        'Fewer than once a year' = 1;
+                                        '1-2 times a year'  = 2;
+                                        '3-4 times a year'  = 3;
+                                        '5-6 times a year'= 4;
+                                        'More than 6 times a year' = 5
+                                        "))) %>%
    mutate_at(vars(ends_with("importance_socmedia")), 
              funs("rc" = recode(.,
                                 "
@@ -190,61 +199,73 @@ a <- twowave %>%
                                 'Extremely important' = 5 "))) %>% #need to change every module below as this format
    mutate_at(vars(contains("_covid_")), 
              funs("rc" = recode(.,
-                                "Not at all severe" = 1,
-                                "Not so severe"  = 2,
-                                "Somewhat severe"  = 3,
-                                "Very severe"= 4,
-                                "Extremely severe" = 5))) %>%
+                                "
+                                'Not at all severe' = 1;
+                                'Not so severe'  = 2;
+                                'Somewhat severe'  = 3;
+                                'Very severe'= 4;
+                                'Extremely severe' = 5 "))) %>%
    mutate_at(vars(contains("_covidnews_")), 
              funs("rc" = recode(.,
-                                "Very rare" = 1,
-                                "Once a week"  = 2,
-                                "Several times a week"  = 3,
-                                "Once a day"= 4,
-                                "Several times a day" = 5))) %>%
+                                "
+                                'Very rare' = 1;
+                                'Once a week'  = 2;
+                                'Several times a week'  = 3;
+                                'Once a day'= 4;
+                                'Several times a day' = 5
+                                "))) %>%
    mutate_at(vars(ends_with("_frequency")), 
              funs("rc" = recode(.,
-                                "Never" = 1,
-                                "Rarely"  = 2,
-                                "Sometimes"  = 3,
-                                "Frequently"= 4,
-                                "Always" = 5))) %>%
+                                "
+                                'Never' = 1;
+                                'Rarely'  = 2;
+                                'Sometimes'  = 3;
+                                'Frequently'= 4;
+                                'Always' = 5
+                                "))) %>%
    mutate_at(vars(ends_with("_like")), 
              funs("rc" = recode(.,
-                                "Do not like at all" = 1,
-                                "Like a little"  = 2,
-                                "Like somewhat"  = 3,
-                                "Like a great deal"= 4,
-                                "Like a lot" = 5))) %>%
+                                "
+                                'Do not like at all' = 1;
+                                'Like a little'  = 2;
+                                'Like somewhat'  = 3;
+                                'Like a great deal'= 4;
+                                'Like a lot' = 5
+                                "))) %>%
    mutate_at(vars(ends_with("_close")), 
              funs("rc" = recode(.,
-                                "Not at all close" = 1,
-                                "Slightly close"  = 2,
-                                "Moderately close"  = 3,
-                                "Very close"= 4,
-                                "Extremely close" = 5))) 
-
-
-a <- a%>%
+                                "
+                                'Not at all close' = 1;
+                                'Slightly close'  = 2;
+                                'Moderately close'  = 3;
+                                'Very close'= 4;
+                                'Extremely close' = 5
+                                "))) %>%
    mutate_at(vars(contains("_anx_")), 
              funs("rc" = recode(.,
-                                "Not at all" = 0,
-                                "Several days"  = 1,
-                                "More than half the days"  = 2,
-                                "Nearly every day"= 3))) %>%
+                                "
+                                'Not at all' = 0;
+                                'Several days'  = 1;
+                                'More than half the days'  = 2;
+                                'Nearly every day'= 3
+                                "))) %>%
    mutate_at(vars(contains("_dep_")), 
              funs("rc" = recode(.,
-                                "Not at all" = 0,
-                                "Several days"  = 1,
-                                "More than half the days"  = 2,
-                                "Nearly every day"= 3)))  %>% 
+                                "
+                                'Not at all' = 0;
+                                'Several days'  = 1;
+                                'More than half the days'  = 2;
+                                'Nearly every day'= 3
+                                ")))  %>% 
    mutate_at(vars(contains("year_US")), 
                    funs("year_US_rc" = recode(.,
-                                      "Less than 1 year" = 1,
-                                      "1-2 years"  = 2,
-                                      "2-3 years"  = 3,
-                                      "3-4 years"= 4,
-                                      "More than 4 years" = 5))) 
+                                              "
+                                      'Less than 1 year' = 1;
+                                      '1-2 years'  = 2;
+                                      '2-3 years'  = 3;
+                                      '3-4 years'= 4;
+                                      'More than 4 years' = 5
+                                      "))) 
 
 
 write.csv(a, "twowave_renamed.csv")
@@ -307,8 +328,11 @@ mean(twowave[,"year"], na.rm = TRUE)
 #fill in NAs with mean value
 twowave[is.na(twowave[,"year"]), "year"] <- c(25.5, 25.5, 25.5)
 
-twowave <- twowave[-c(19:33, 104:118)]
+twowave <- twowave[-c(19:33, 104:118)] #remove raw dep/anx, only keep recoded ones
+
+
 #aggregate multi-item questions
+
  wave2_gss_avg <- twowave %>% select(starts_with('wave2_gss')) %>%
    transmute(wave2_gss_avg = rowMeans(., na.rm = TRUE))%>% 
    as.data.frame()
@@ -330,7 +354,7 @@ twowave <- twowave[-c(19:33, 104:118)]
    as.data.frame()
  
 twowave <- cbind(twowave, wave2_gss_avg,wave2_dep_avg,wave2_anx_avg, wave1_gss_avg, wave1_dep_avg, wave1_anx_avg )
-twowave <- twowave[-c(1,2,13:18,29:34, 124:153)] #remove multi-item questions
+twowave <- twowave[-c(1,2,13:18,29:34, 126:155)] #remove multi-item questions
 
 #fill in NAs to empty cells
 twowave[twowave==""]<-NA
@@ -338,28 +362,11 @@ netsize <- twowave %>% select(person1, person2, person3,person4,person5,person6)
 twowave <- cbind(twowave, netsize)
 twowave <- twowave[-c(21:26)]
 
-#english
-twowave <- twowave %>% 
-   mutate_at(vars(contains("english")), 
-                  funs("english_rc" = recode(.,
-                                     "Not well at all" = 1,
-                                     "Slightly well"  = 2,
-                                     "Moderately well"  = 3,
-                                     "Very well"= 4,
-                                     "Extremely well" = 5))) %>%
-   mutate_at(vars(contains("freq_home")), 
-             funs("english_rc" = recode(.,
-                                        "Fewer than once a year" = 1,
-                                        "1-2 times a year"  = 2,
-                                        "3-4 times a year"  = 3,
-                                        "5-6 times a year"= 4,
-                                        "More than 6 times a year" = 5))) 
-
-twowave <- twowave %>% rename(year_US_rc = rc)
-
-write.csv(twowave, "twowave_renamed2.csv")
-twowave <- read.csv("twowave_renamed2.csv")
-
+#create new variables about news/non-news
+twowave$hour_socmedia_diff = twowave$wave2_hour_socmedia - twowave$wave1_hour_socmedia
+twowave$wave1_hour_socmedia_nonnews = twowave$wave1_hour_socmedia - twowave$wave1_hour_socmedia_news
+twowave$wave2_hour_socmedia_nonnews = twowave$wave2_hour_socmedia - twowave$wave2_hour_socmedia_news
+twowave$diff_gss = twowave$wave2_gss_avg - twowave$wave1_gss_avg
 
 #count mainstream American social media
 #count multiple platform
@@ -447,8 +454,8 @@ b <-  twowave %>% select(ends_with('_like_rc')) %>% mutate(avg_like = rowMeans(.
 twowave$avg_close <- a$avg_close
 twowave$avg_like <- b$avg_like
 
-write.csv(twowave, "twowave0922.csv")
-twowave <- read.csv("twowave0922.csv")
+write.csv(twowave, "twowave20210127.csv")
+twowave <- read.csv("twowave20210126.csv")
 
 
 #compare wave2 participants with benchmark to check for selection bias
@@ -493,4 +500,38 @@ benchmark$english_rc <- as.numeric(benchmark$english_rc)
 summary(benchmark[,c("year_rc","year_US_rc", "english_rc", "sex", "degree")])
 summary(twowave[,c("year","year_US_rc", "english_rc", "sex", "degree")])
 
+########################
+###   descriptives
+## general anxiety and depression
+########################
+summary(twowave$wave1_dep_avg)
+summary(twowave$wave2_dep_avg)
+
+summary(twowave$wave1_anx_avg)
+summary(twowave$wave2_anx_avg)
+
+sd(twowave$wave1_dep_avg)
+sd(twowave$wave2_dep_avg)
+
+sd(twowave$wave1_anx_avg)
+sd(twowave$wave2_anx_avg)
+
+a <- twowave %>% select(wave1_dep_avg) %>%group_by(wave1_dep_avg) %>%
+        summarise(proportion = n()) %>% 
+        mutate(cumPerc = 100 - cumsum(100*proportion/sum(proportion)))
+
+b <- twowave %>% select(wave2_dep_avg) %>%group_by(wave2_dep_avg) %>%
+   summarise(proportion = n()) %>% 
+   mutate(cumPerc =100 - cumsum(100*proportion/sum(proportion)))
+
+a <- twowave %>% select(wave1_anx_avg) %>%group_by(wave1_anx_avg) %>%
+   summarise(proportion = n()) %>% 
+   mutate(Perc = 100 - cumsum(100*proportion/sum(proportion)))
+
+b <- twowave %>% select(wave2_anx_avg) %>%group_by(wave2_anx_avg) %>%
+   summarise(proportion = n()) %>% 
+   mutate(Perc = 100- cumsum(100*proportion/sum(proportion)))
+
+t.test(twowave$wave1_anx_avg, twowave$wave2_anx_avg, paired = T)
+t.test(twowave$wave1_dep_avg, twowave$wave2_dep_avg, paired = T)
 
